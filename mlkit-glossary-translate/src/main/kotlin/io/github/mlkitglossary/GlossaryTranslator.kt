@@ -4,6 +4,7 @@ import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.Translator
 import com.google.mlkit.nl.translate.TranslatorOptions
+import io.github.mlkitglossary.core.DryRunReport
 import io.github.mlkitglossary.core.FallbackStrategy
 import io.github.mlkitglossary.core.GenderAgreement
 import io.github.mlkitglossary.core.Glossary
@@ -72,6 +73,12 @@ public class GlossaryTranslator(
 
     /** Like [translate] but exposes the failure cause. */
     public suspend fun translateResult(text: String): Result<String> = pipeline.translate(text)
+
+    /**
+     * Runs [texts] through the real ML Kit model and reports whether the glossary placeholders survived.
+     * Call `report.format()` to print it; useful for tuning a glossary on a real device.
+     */
+    public suspend fun dryRun(texts: List<String>): DryRunReport = pipeline.dryRun(texts)
 
     /** Translates text containing HTML tags/entities, keeping markup well-formed. See the pipeline docs. */
     public suspend fun translateMarkup(text: String): Result<String> = pipeline.translateMarkup(text)

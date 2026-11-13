@@ -122,26 +122,62 @@ public class GlossaryTranslationPipeline(
     /** Translates each text independently; one failure does not affect the others. */
     public suspend fun translateAll(texts: List<String>): List<Result<String>> = texts.map { translate(it) }
 
-    private suspend fun run(text: String, glossary: Glossary): String {
-        val prepared = protector.protect(text, glossary)
-        if (prepared.slots.isEmpty()) return engine.translate(text)
+    private suspend fun run(text: String, glossary: Glossary): String = execute(text, glossary).output
 
-        if (!protector.hasTranslatableContent(prepared)) {
-            return protector.restore(prepared.text, prepared).text
+    internal suspend fun execute(text: String, glossary: Glossary = current): Execution {
+        val prepared = protector.protect(text, glossary)
+        if (prepared.slots.isEmpty()) {
+            return Execution(engine.translate(text), DryRunOutcome.NOTHING_TO_PROTECT, null, null, emptyList(), 0)
         }
 
-        val result = protector.restore(engine.translate(prepared.text), prepared)
-        if (result.isClean) return result.text
-        if (fallback == FallbackStrategy.PARTIAL_RESULT) return result.text
+        if (!protector.hasTranslatableContent(prepared)) {
+            val restored = protector.restore(prepared.text, prepared).text
+            return Execution(restored, DryRunOutcome.ONLY_PROTECTED_TEXT, prepared.text, null, emptyList(), 0)
+        }
+
+        val raw = engine.translate(prepared.text)
+        val result = protector.restore(raw, prepared)
+        val missing = result.missing.map { it.original }
+        if (result.isClean) {
+            return Execution(result.text, DryRunOutcome.CLEAN, prepared.text, raw, emptyList(), 0)
+        }
+        if (fallback == FallbackStrategy.PARTIAL_RESULT) {
+            return Execution(result.text, DryRunOutcome.PARTIAL_RESULT, prepared.text, raw, missing, result.unrecognizedTokens)
+        }
 
         val hasGlossarySlot = prepared.slots.any { it.kind == SlotKind.GLOSSARY }
         if (hasGlossarySlot) {
             val numbersOnly = protector.protect(text, glossary, setOf(SlotKind.PRESERVED))
             if (numbersOnly.slots.isNotEmpty()) {
                 val retry = protector.restore(engine.translate(numbersOnly.text), numbersOnly)
-                if (retry.isClean) return retry.text
+                if (retry.isClean) {
+                    return Execution(
+                        retry.text, DryRunOutcome.RETRIED_WITHOUT_GLOSSARY, prepared.text, raw, missing, result.unrecognizedTokens,
+                    )
+                }
             }
         }
-        return engine.translate(text)
+        return Execution(
+            engine.translate(text), DryRunOutcome.FELL_BACK_TO_PLAIN, prepared.text, raw, missing, result.unrecognizedTokens,
+        )
+    }
+
+    /**
+     * Runs [texts] through the real engine and reports, per text, whether the glossary survived
+     * translation. Use it on a device to measure how reliably the engine keeps the placeholders.
+     */
+    public suspend fun dryRun(texts: List<String>): DryRunReport {
+        val snapshot = current
+        val entries = texts.map { text ->
+            try {
+                val e = execute(text, snapshot)
+                DryRunEntry(text, e.outcome, e.protectedText, e.rawTranslation, e.output, e.missing, e.unrecognizedTokens, null)
+            } catch (c: CancellationException) {
+                throw c
+            } catch (ex: Exception) {
+                DryRunEntry(text, DryRunOutcome.FAILED, null, null, null, emptyList(), 0, ex::class.simpleName ?: "Exception")
+            }
+        }
+        return DryRunReport(entries)
     }
 }

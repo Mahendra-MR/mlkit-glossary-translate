@@ -48,6 +48,7 @@ class MainActivity : Activity() {
         )
         val output = TextView(this).apply { textSize = 15f }
         val button = Button(this).apply { text = "Translate (plain vs glossary)" }
+        val dryRunButton = Button(this).apply { text = "Dry run (placeholder survival)" }
         setContentView(
             ScrollView(this).apply {
                 addView(
@@ -55,11 +56,19 @@ class MainActivity : Activity() {
                         orientation = LinearLayout.VERTICAL
                         setPadding(32, 32, 32, 32)
                         addView(button)
+                        addView(dryRunButton)
                         addView(output)
                     },
                 )
             },
         )
+        dryRunButton.setOnClickListener {
+            output.text = "Running dry run..."
+            scope.launch {
+                translator.glossary = glossary
+                output.text = translator.dryRun(sentences).format()
+            }
+        }
         button.setOnClickListener {
             output.text = "Downloading model / translating..."
             scope.launch {

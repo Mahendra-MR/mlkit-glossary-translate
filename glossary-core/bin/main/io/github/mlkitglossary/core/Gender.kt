@@ -1,7 +1,19 @@
 package io.github.mlkitglossary.core
 
 /** Grammatical gender of a glossary replacement, used by [GenderAgreement] to fix neighbouring words. */
-public enum class Gender { MASCULINE, FEMININE }
+public enum class Gender {
+    MASCULINE,
+    FEMININE;
+
+    public companion object {
+        /** Parses `masculine`/`m` or `feminine`/`f` (case-insensitive); anything else is null. */
+        public fun fromLabel(raw: String?): Gender? = when (raw?.trim()?.lowercase()) {
+            "masculine", "m" -> MASCULINE
+            "feminine", "f" -> FEMININE
+            else -> null
+        }
+    }
+}
 
 /**
  * Adjusts the word that precedes a restored glossary term so it agrees with the term's [Gender].

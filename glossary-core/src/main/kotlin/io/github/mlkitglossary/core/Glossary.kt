@@ -28,6 +28,14 @@ public class Glossary private constructor(
         .entries
         .associate { (k, v) -> normalize(k) to v }
 
+    /** Keys that normalise to the same term (differ only by case or whitespace); the last one wins. */
+    public val duplicateKeys: List<String> = entries.keys
+        .filter { it.isNotBlank() }
+        .groupBy { normalize(it) }
+        .filterValues { it.size > 1 }
+        .keys
+        .toList()
+
     public val size: Int get() = terms.size
 
     public fun isEmpty(): Boolean = terms.isEmpty()

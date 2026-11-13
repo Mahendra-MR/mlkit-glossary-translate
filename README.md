@@ -107,6 +107,9 @@ Requires `minSdk 21`. The JVM-only core is also available as `com.github.Mahendr
 - **Preserve patterns:** `preservePatterns = PreservePatterns.ALL` keeps numbers, URLs, e-mails, HTML tags and format args intact.
 - **Markup:** `translateMarkup("Your <b>loan</b> is approved")` translates the sentence in context and keeps tags and entities (`&amp;`) intact. If translation reorders tags so they become malformed, it translates each text run between tags separately.
 - **Unspaced source scripts:** term matching works for Chinese, Japanese and Thai source text (no word boundary is required next to those scripts), and Latin terms or numbers next to them still match.
+- **Glossary files:** `GlossaryCsv.parse(text)` (Excel / Google Sheets "Save as CSV UTF-8") and `GlossaryXlsx.parse(inputStream)` (`.xlsx`, first sheet, no extra dependencies). Columns: `source, replacement, gender`; a header row (`English, Hindi, Gender`) is detected and may reorder columns; `#` comments and blank lines are ignored.
+- **Offline analysis:** `glossary.analyze(sampleSentences).format()` shows which terms match, what is sent to ML Kit, which terms never match, and duplicate keys.
+- **Dry run:** `translator.dryRun(sentences).format()` runs your sentences through the real model and reports per sentence whether the placeholders survived (`CLEAN`, `RETRIED_WITHOUT_GLOSSARY`, `FELL_BACK_TO_PLAIN`, ...) plus an overall survival rate. Use it to tune a glossary on a device.
 - **Sample app** in `sample/` compares plain vs glossary output side by side.
 
 ## Limitations

@@ -67,6 +67,13 @@ class GlossaryTranslatorInstrumentedTest {
         }
     }
 
+    @Test fun dryRunReportsPlaceholderSurvival() = runBlocking {
+        translator.glossary = glossary
+        val report = translator.dryRun(sentences)
+        Log.i("GlossaryTest", report.format())
+        assertTrue("survival ", report.survivalRate >= 0.8)
+    }
+
     @Test fun specificTermsAreUsed() = runBlocking {
         assertTrue(translator.translate("Your Loan is approved")!!.contains("लोन"))
         assertTrue(translator.translate("Enter the OTP sent to your mobile")!!.contains("OTP"))

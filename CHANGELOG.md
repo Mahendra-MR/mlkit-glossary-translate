@@ -12,3 +12,4 @@
 - Sample app and instrumented test (needs a device with network).
 - `matchPlurals`, `PreservePatterns`, numbers-only retry before plain fallback.
 - `translateMarkup` with tag validation and per-run fallback; term matching for unspaced scripts (CJK, Thai).
+- `GlossaryCsv`, `GlossaryXlsx`, `Glossary.analyze`, `dryRun` with outcome report.
