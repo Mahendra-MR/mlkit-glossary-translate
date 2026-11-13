@@ -14,7 +14,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "mlkit-glossary-translate-root"
+rootProject.name = "mlkit-glossary-translate"
 
 include(":glossary-core")
 include(":mlkit-glossary-translate")
