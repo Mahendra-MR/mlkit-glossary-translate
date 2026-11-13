@@ -73,7 +73,29 @@ translator.close()                                  // when done
 Options on `GlossaryTranslator`: `preservePatterns` (regexes copied through unchanged, default 4+ digit
 numbers), `fallback` (`PLAIN_TRANSLATION` default or `PARTIAL_RESULT`), `downloadConditions`.
 
-Not published yet; for now include the modules from source (`./gradlew :mlkit-glossary-translate:publishToMavenLocal` for local use).
+## Install
+
+Via [JitPack](https://jitpack.io/#Mahendra-MR/mlkit-glossary-translate). In `settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven("https://jitpack.io")
+    }
+}
+```
+
+Then in your module:
+
+```kotlin
+dependencies {
+    implementation("com.github.Mahendra-MR:mlkit-glossary-translate:v0.1.1")
+}
+```
+
+Requires `minSdk 21`. The JVM-only core is also available as `com.github.Mahendra-MR:glossary-core:v0.1.1`.
 
 ## Beyond a plain swap
 

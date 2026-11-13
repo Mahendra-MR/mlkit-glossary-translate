@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.1
+- Publish `glossary-core` so the Android artifact resolves (0.1.0 was missing it).
+
+## 0.1.0
 - Glossary with case-insensitive, word-boundary, longest-match-first matching.
 - Placeholder protect/restore with tolerant restore and plain-translation fallback.
 - Number / mask protection (4+ digits, `XXXX1234`).

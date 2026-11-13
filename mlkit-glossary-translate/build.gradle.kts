@@ -49,7 +49,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "io.github.mlkitglossary"
                 artifactId = "mlkit-glossary-translate"
-                version = "0.1.0"
+                version = "0.1.1"
                 pom {
                     name.set("mlkit-glossary-translate")
                     description.set("Glossary / keep-these-words layer for ML Kit on-device translation")
