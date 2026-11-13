@@ -73,6 +73,9 @@ public class GlossaryTranslator(
     /** Like [translate] but exposes the failure cause. */
     public suspend fun translateResult(text: String): Result<String> = pipeline.translate(text)
 
+    /** Translates text containing HTML tags/entities, keeping markup well-formed. See the pipeline docs. */
+    public suspend fun translateMarkup(text: String): Result<String> = pipeline.translateMarkup(text)
+
     /** Translates every text in order; a failure for one text does not affect the others. */
     public suspend fun translateAll(texts: List<String>): List<Result<String>> = pipeline.translateAll(texts)
 

@@ -12,6 +12,10 @@ public class PlaceholderProtector(
     private val agreement: GenderAgreement = GenderAgreement.NONE,
 ) {
 
+    /** Copy of this protector that also preserves [extra] patterns. */
+    public fun withExtraPatterns(extra: List<Regex>): PlaceholderProtector =
+        PlaceholderProtector(preservePatterns + extra, agreement)
+
     public fun protect(
         text: String,
         glossary: Glossary,
@@ -117,7 +121,7 @@ public class PlaceholderProtector(
 
     public companion object {
         /** Sequences of 4+ digits / `x` masks, e.g. account fragments, OTPs, ids. */
-        public val DEFAULT_NUMBER_PATTERN: Regex = Regex("(?<![\\p{L}\\p{N}])[xX\\p{Nd}]{4,}(?![\\p{L}\\p{N}])")
+        public val DEFAULT_NUMBER_PATTERN: Regex = Regex("(?<!${WordChars.CLASS})[xX\\p{Nd}]{4,}(?!${WordChars.CLASS})")
 
         private fun token(index: Int) = "GLS${index}Q"
 

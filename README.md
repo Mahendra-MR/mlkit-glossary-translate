@@ -66,21 +66,22 @@ Not published yet; for now include the modules from source (`./gradlew :mlkit-gl
 
 ## Beyond a plain swap
 
-- **Any language pair.** Nothing in the core is Hindi-specific; pass any `TranslateLanguage` codes. The source language should be space-delimited (English, Spanish, ...) because term matching uses word boundaries.
+- **Any language pair.** Nothing in the core is Hindi-specific; pass any `TranslateLanguage` codes. Word-boundary matching is applied for spaced scripts and skipped next to Han, Kana, Thai, Lao, Khmer and Myanmar text.
 - **Gender agreement.** Mark entries with a gender and pass an agreement helper: `Glossary.build { term("EMI", "किस्त", Gender.FEMININE) }` with `agreement = HindiGenderAgreement()` turns `आपका GLS0Q` into `आपकी किस्त`. Implement `GenderAgreement` for other languages.
 - **JSON glossaries** (e.g. from remote config): `GlossaryJson.parse("""{"Loan":"लोन","EMI":{"to":"किस्त","gender":"feminine"}}""")`.
 - **Batch and cache:** `translateAll(list)` and `cacheSize = 50`.
 - **Plurals:** `Glossary.build { term("loan", "लोन"); matchPlurals() }`.
 - **Preserve patterns:** `preservePatterns = PreservePatterns.ALL` keeps numbers, URLs, e-mails, HTML tags and format args intact.
+- **Markup:** `translateMarkup("Your <b>loan</b> is approved")` translates the sentence in context and keeps tags and entities (`&amp;`) intact. If translation reorders tags so they become malformed, it translates each text run between tags separately.
+- **Unspaced source scripts:** term matching works for Chinese, Japanese and Thai source text (no word boundary is required next to those scripts), and Latin terms or numbers next to them still match.
 - **Sample app** in `sample/` compares plain vs glossary output side by side.
 
 ## Limitations
 
 - **Verb agreement after the noun is not fixed.** Only the word immediately before a gendered term is adjusted (`आपका` -> `आपकी`). Verbs and participles later in the sentence (`की गई` vs `किया गया`) are left as ML Kit produced them.
 - **Replacements are not inflected.** `matchPlurals` makes `loans` and `loan's` match the `loan` term, but the replacement is inserted unchanged, so target-language plural, case or oblique forms are not generated.
-- **Space-delimited source language assumed.** Term matching uses word boundaries, which does not work for Chinese or Japanese source text.
 - **Token survival depends on the ML Kit model.** Restore tolerates case, spacing and non-ASCII digits. If a token is lost, the library first retries protecting only numbers and patterns, then falls back to an unprotected translation, so that sentence is translated without your glossary.
-- Markup: HTML tags, URLs, e-mails and format args (`%1$s`, `{name}`) are kept intact via `PreservePatterns`, but tag-aware translation of the text between tags is not done (see html-translator projects for that).
+- **Markup is handled structurally, not semantically.** `translateMarkup` keeps tags and entities intact and checks the tags are still well-formed (falling back to translating each text run separately), but attributes such as `title="..."` or `alt="..."` are not translated.
 
 ## Development
 

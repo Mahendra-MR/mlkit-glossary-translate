@@ -65,7 +65,7 @@ public class Glossary private constructor(
         public inline fun build(block: Builder.() -> Unit): Glossary = Builder().apply(block).build()
 
         private val WHITESPACE = Regex("\\s+")
-        private const val WORD = "[\\p{L}\\p{N}_]"
+        private const val WORD = WordChars.CLASS
         private const val SUFFIX_PATTERN = "(?:es|s|['’]s)?"
         private val SUFFIXES = listOf("'s", "’s", "es", "s")
 
@@ -87,6 +87,6 @@ public class Glossary private constructor(
             return Regex(alternatives, setOf(RegexOption.IGNORE_CASE))
         }
 
-        private fun Char.isWordChar(): Boolean = isLetterOrDigit() || this == '_'
+        private fun Char.isWordChar(): Boolean = WordChars.isBoundaryChar(this)
     }
 }
