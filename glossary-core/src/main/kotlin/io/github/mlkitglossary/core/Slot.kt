@@ -15,6 +15,9 @@ public data class Slot(
     val original: String,
     val output: String,
     val gender: Gender? = null,
+    /** The token was padded with a space on this side because it touched a letter or digit. */
+    val padBefore: Boolean = false,
+    val padAfter: Boolean = false,
 )
 
 public class ProtectedText internal constructor(

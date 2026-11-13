@@ -12,15 +12,19 @@ public class PlaceholderProtector(
     private val agreement: GenderAgreement = GenderAgreement.NONE,
 ) {
 
-    public fun protect(text: String, glossary: Glossary): ProtectedText {
+    public fun protect(
+        text: String,
+        glossary: Glossary,
+        kinds: Set<SlotKind> = setOf(SlotKind.GLOSSARY, SlotKind.PRESERVED),
+    ): ProtectedText {
         if (text.isEmpty() || TOKEN.containsMatchIn(text)) return ProtectedText(text, emptyList())
 
         val candidates = mutableListOf<Candidate>()
-        glossary.pattern?.findAll(text)?.forEach { m ->
+        if (SlotKind.GLOSSARY in kinds) glossary.pattern?.findAll(text)?.forEach { m ->
             val entry = glossary.entryFor(m.value) ?: return@forEach
             candidates += Candidate(m.range, SlotKind.GLOSSARY, m.value, entry.replacement, entry.gender)
         }
-        preservePatterns.forEach { p ->
+        if (SlotKind.PRESERVED in kinds) preservePatterns.forEach { p ->
             p.findAll(text).filter { it.value.isNotEmpty() }.forEach { m ->
                 candidates += Candidate(m.range, SlotKind.PRESERVED, m.value, m.value, null)
             }
@@ -36,8 +40,12 @@ public class PlaceholderProtector(
         for (c in ordered) {
             if (c.range.first < cursor) continue
             sb.append(text, cursor, c.range.first)
+            val padBefore = c.range.first > 0 && text[c.range.first - 1].isLetterOrDigit()
+            val padAfter = c.range.last + 1 < text.length && text[c.range.last + 1].isLetterOrDigit()
+            if (padBefore) sb.append(' ')
             sb.append(token(slots.size))
-            slots += Slot(slots.size, c.kind, c.original, c.output, c.gender)
+            if (padAfter) sb.append(' ')
+            slots += Slot(slots.size, c.kind, c.original, c.output, c.gender, padBefore, padAfter)
             cursor = c.range.last + 1
         }
         sb.append(text, cursor, text.length)
@@ -63,8 +71,10 @@ public class PlaceholderProtector(
             }
             seen[idx] = true
             val slot = slots[idx]
+            if (slot.padBefore && sb.isNotEmpty() && sb.last() == ' ') sb.setLength(sb.length - 1)
             slot.gender?.let { applyAgreement(sb, it) }
             sb.append(slot.output)
+            if (slot.padAfter && cursor < translated.length && translated[cursor] == ' ') cursor++
         }
         sb.append(translated, cursor, translated.length)
         val missing = slots.filter { !seen[it.index] }
@@ -113,7 +123,7 @@ public class PlaceholderProtector(
 
         // Tolerates case changes, inner spaces/hyphens/underscores and non-ASCII digits.
         private val TOKEN = Regex(
-            "(?<![A-Za-z])G\\s?L\\s?S\\s?[-_]?\\s?(\\p{Nd}+)\\s?Q(?![A-Za-z])",
+            "(?<![A-Za-z])G\\s?L\\s?S\\s?[-_]?\\s?(\\p{Nd}+)\\s?Q",
             RegexOption.IGNORE_CASE,
         )
     }

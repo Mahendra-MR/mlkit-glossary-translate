@@ -16,7 +16,7 @@ import org.json.JSONObject
  * @throws org.json.JSONException on malformed input
  */
 public object GlossaryJson {
-    public fun parse(json: String): Glossary {
+    public fun parse(json: String, matchPlurals: Boolean = false): Glossary {
         val root = JSONObject(json)
         val entries = LinkedHashMap<String, GlossaryEntry>()
         for (key in root.keys()) {
@@ -25,7 +25,7 @@ public object GlossaryJson {
                 else -> GlossaryEntry(value.toString())
             }
         }
-        return Glossary.of(entries)
+        return Glossary.of(entries, matchPlurals)
     }
 
     private fun parseGender(raw: String): Gender? = when (raw.trim().lowercase()) {

@@ -7,3 +7,4 @@
 - Optional gender agreement (`GenderAgreement`, bundled `HindiGenderAgreement`).
 - `translateAll`, in-memory cache, runtime-swappable glossary, JSON glossary loader.
 - Sample app and instrumented test (needs a device with network).
+- `matchPlurals`, `PreservePatterns`, numbers-only retry before plain fallback.

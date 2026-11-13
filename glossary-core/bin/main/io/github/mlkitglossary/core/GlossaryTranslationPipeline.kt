@@ -9,7 +9,10 @@ public fun interface TranslationEngine {
 
 /** What to do when a protected token does not survive translation. */
 public enum class FallbackStrategy {
-    /** Translate the original text without any protection (never worse than the plain engine). */
+    /**
+     * Retry protecting only numbers/patterns (so figures stay correct), then, if that also fails,
+     * translate the original text unprotected. Never worse than the plain engine.
+     */
     PLAIN_TRANSLATION,
 
     /** Return the restored text anyway; missing terms are simply absent. */
@@ -74,9 +77,16 @@ public class GlossaryTranslationPipeline(
 
         val result = protector.restore(engine.translate(prepared.text), prepared)
         if (result.isClean) return result.text
-        return when (fallback) {
-            FallbackStrategy.PLAIN_TRANSLATION -> engine.translate(text)
-            FallbackStrategy.PARTIAL_RESULT -> result.text
+        if (fallback == FallbackStrategy.PARTIAL_RESULT) return result.text
+
+        val hasGlossarySlot = prepared.slots.any { it.kind == SlotKind.GLOSSARY }
+        if (hasGlossarySlot) {
+            val numbersOnly = protector.protect(text, glossary, setOf(SlotKind.PRESERVED))
+            if (numbersOnly.slots.isNotEmpty()) {
+                val retry = protector.restore(engine.translate(numbersOnly.text), numbersOnly)
+                if (retry.isClean) return retry.text
+            }
         }
+        return engine.translate(text)
     }
 }

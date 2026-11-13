@@ -70,6 +70,8 @@ Not published yet; for now include the modules from source (`./gradlew :mlkit-gl
 - **Gender agreement.** Mark entries with a gender and pass an agreement helper: `Glossary.build { term("EMI", "किस्त", Gender.FEMININE) }` with `agreement = HindiGenderAgreement()` turns `आपका GLS0Q` into `आपकी किस्त`. Implement `GenderAgreement` for other languages.
 - **JSON glossaries** (e.g. from remote config): `GlossaryJson.parse("""{"Loan":"लोन","EMI":{"to":"किस्त","gender":"feminine"}}""")`.
 - **Batch and cache:** `translateAll(list)` and `cacheSize = 50`.
+- **Plurals:** `Glossary.build { term("loan", "लोन"); matchPlurals() }`.
+- **Preserve patterns:** `preservePatterns = PreservePatterns.ALL` keeps numbers, URLs, e-mails, HTML tags and format args intact.
 - **Sample app** in `sample/` compares plain vs glossary output side by side.
 
 ## Status
@@ -78,14 +80,11 @@ The pure-Kotlin logic is covered by JVM tests. The instrumented test and sample 
 
 ## Limitations
 
-- **Grammar around placeholders.** Hindi inflects verbs and adjectives by noun gender, and postpositions
-  can depend on the noun. ML Kit sees only a token, so it cannot know the gender of the word you will
-  substitute. `आपका GLS0Q` may need `आपकी` for a feminine noun. Pick glossary terms with that in mind,
-  or keep terms whose usual gender matches how ML Kit tends to treat unknown nouns.
-- Glossary terms are exact (no stemming): `loans` does not match `loan` unless you add it.
-- Token survival depends on the ML Kit model. The restore is tolerant and falls back safely, but a
-  fallback means that sentence is translated without your glossary.
-- Plain-text only; no HTML/markup handling.
+- **Verb agreement after the noun is not fixed.** Only the word immediately before a gendered term is adjusted (`आपका` -> `आपकी`). Verbs and participles later in the sentence (`की गई` vs `किया गया`) are left as ML Kit produced them.
+- **Replacements are not inflected.** `matchPlurals` makes `loans` and `loan's` match the `loan` term, but the replacement is inserted unchanged, so target-language plural, case or oblique forms are not generated.
+- **Space-delimited source language assumed.** Term matching uses word boundaries, which does not work for Chinese or Japanese source text.
+- **Token survival depends on the ML Kit model.** Restore tolerates case, spacing and non-ASCII digits. If a token is lost, the library first retries protecting only numbers and patterns, then falls back to an unprotected translation, so that sentence is translated without your glossary. Not yet measured on real hardware.
+- Markup: HTML tags, URLs, e-mails and format args (`%1$s`, `{name}`) are kept intact via `PreservePatterns`, but tag-aware translation of the text between tags is not done (see html-translator projects for that).
 
 ## Development
 
