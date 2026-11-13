@@ -91,11 +91,11 @@ Then in your module:
 
 ```kotlin
 dependencies {
-    implementation("com.github.Mahendra-MR:mlkit-glossary-translate:v0.1.1")
+    implementation("com.github.Mahendra-MR.mlkit-glossary-translate:mlkit-glossary-translate:v0.1.1")
 }
 ```
 
-Requires `minSdk 21`. The JVM-only core is also available as `com.github.Mahendra-MR:glossary-core:v0.1.1`.
+Requires `minSdk 21`. The JVM-only core is also available as `com.github.Mahendra-MR.mlkit-glossary-translate:glossary-core:v0.1.1`.
 
 ## Beyond a plain swap
 
