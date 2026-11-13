@@ -14,6 +14,7 @@ public data class Slot(
     val kind: SlotKind,
     val original: String,
     val output: String,
+    val gender: Gender? = null,
 )
 
 public class ProtectedText internal constructor(

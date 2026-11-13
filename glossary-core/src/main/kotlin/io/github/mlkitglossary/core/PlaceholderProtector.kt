@@ -9,6 +9,7 @@ package io.github.mlkitglossary.core
  */
 public class PlaceholderProtector(
     private val preservePatterns: List<Regex> = listOf(DEFAULT_NUMBER_PATTERN),
+    private val agreement: GenderAgreement = GenderAgreement.NONE,
 ) {
 
     public fun protect(text: String, glossary: Glossary): ProtectedText {
@@ -16,12 +17,12 @@ public class PlaceholderProtector(
 
         val candidates = mutableListOf<Candidate>()
         glossary.pattern?.findAll(text)?.forEach { m ->
-            val out = glossary.replacementFor(m.value) ?: return@forEach
-            candidates += Candidate(m.range, SlotKind.GLOSSARY, m.value, out)
+            val entry = glossary.entryFor(m.value) ?: return@forEach
+            candidates += Candidate(m.range, SlotKind.GLOSSARY, m.value, entry.replacement, entry.gender)
         }
         preservePatterns.forEach { p ->
             p.findAll(text).filter { it.value.isNotEmpty() }.forEach { m ->
-                candidates += Candidate(m.range, SlotKind.PRESERVED, m.value, m.value)
+                candidates += Candidate(m.range, SlotKind.PRESERVED, m.value, m.value, null)
             }
         }
         if (candidates.isEmpty()) return ProtectedText(text, emptyList())
@@ -36,7 +37,7 @@ public class PlaceholderProtector(
             if (c.range.first < cursor) continue
             sb.append(text, cursor, c.range.first)
             sb.append(token(slots.size))
-            slots += Slot(slots.size, c.kind, c.original, c.output)
+            slots += Slot(slots.size, c.kind, c.original, c.output, c.gender)
             cursor = c.range.last + 1
         }
         sb.append(text, cursor, text.length)
@@ -49,19 +50,36 @@ public class PlaceholderProtector(
 
         val seen = BooleanArray(slots.size)
         var unrecognized = 0
-        val restored = TOKEN.replace(translated) { m ->
-            val digits = m.groupValues[1]
-            val idx = digits.toIntOrNull { Character.digit(it, 10) }
+        val sb = StringBuilder()
+        var cursor = 0
+        for (m in TOKEN.findAll(translated)) {
+            sb.append(translated, cursor, m.range.first)
+            cursor = m.range.last + 1
+            val idx = m.groupValues[1].toIntOrNull { Character.digit(it, 10) }
             if (idx == null || idx !in slots.indices) {
                 unrecognized++
-                m.value
-            } else {
-                seen[idx] = true
-                slots[idx].output
+                sb.append(m.value)
+                continue
             }
+            seen[idx] = true
+            val slot = slots[idx]
+            slot.gender?.let { applyAgreement(sb, it) }
+            sb.append(slot.output)
         }
+        sb.append(translated, cursor, translated.length)
         val missing = slots.filter { !seen[it.index] }
-        return RestoreResult(restored, missing, unrecognized)
+        return RestoreResult(sb.toString(), missing, unrecognized)
+    }
+
+    private fun applyAgreement(sb: StringBuilder, gender: Gender) {
+        var end = sb.length
+        while (end > 0 && sb[end - 1] == ' ') end--
+        if (end == 0 || end == sb.length) return
+        var start = end
+        while (start > 0 && !sb[start - 1].isWhitespace()) start--
+        val word = sb.substring(start, end)
+        val adjusted = agreement.adjustPrecedingWord(word, gender)
+        if (adjusted != word) sb.replace(start, end, adjusted)
     }
 
     /** True when nothing but tokens, digits and punctuation remain, so there is nothing to translate. */
@@ -73,6 +91,7 @@ public class PlaceholderProtector(
         val kind: SlotKind,
         val original: String,
         val output: String,
+        val gender: Gender?,
     )
 
     private inline fun String.toIntOrNull(digit: (Char) -> Int): Int? {

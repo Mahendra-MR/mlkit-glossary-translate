@@ -18,3 +18,4 @@ rootProject.name = "mlkit-glossary-translate-root"
 
 include(":glossary-core")
 include(":mlkit-glossary-translate")
+include(":sample")

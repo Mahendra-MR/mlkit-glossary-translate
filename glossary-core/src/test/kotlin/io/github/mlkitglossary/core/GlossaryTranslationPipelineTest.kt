@@ -86,3 +86,44 @@ class GlossaryTranslationPipelineTest {
         GlossaryTranslationPipeline(engine, glossary).translate("Pay loan")
     }
 }
+
+class PipelineCacheAndBatchTest {
+    private class CountingEngine : TranslationEngine {
+        var calls = 0
+        override suspend fun translate(text: String): String {
+            calls++
+            return "T:$text"
+        }
+    }
+
+    @Test fun cacheAvoidsRepeatedEngineCalls() = kotlinx.coroutines.test.runTest {
+        val engine = CountingEngine()
+        val p = GlossaryTranslationPipeline(engine, cacheSize = 10)
+        p.translate("hello"); p.translate("hello")
+        assertEquals(1, engine.calls)
+    }
+
+    @Test fun swappingGlossaryClearsCache() = kotlinx.coroutines.test.runTest {
+        val engine = CountingEngine()
+        val p = GlossaryTranslationPipeline(engine, cacheSize = 10)
+        p.translate("hello")
+        p.glossary = Glossary(mapOf("x" to "y"))
+        p.translate("hello")
+        assertEquals(2, engine.calls)
+    }
+
+    @Test fun cacheEvictsOldest() = kotlinx.coroutines.test.runTest {
+        val engine = CountingEngine()
+        val p = GlossaryTranslationPipeline(engine, cacheSize = 1)
+        p.translate("a"); p.translate("b"); p.translate("a")
+        assertEquals(3, engine.calls)
+    }
+
+    @Test fun translateAllKeepsOrderAndIsolatesFailures() = kotlinx.coroutines.test.runTest {
+        val engine = TranslationEngine { if (it == "bad") error("x") else "T:$it" }
+        val r = GlossaryTranslationPipeline(engine).translateAll(listOf("a", "bad", "c"))
+        assertEquals("T:a", r[0].getOrNull())
+        assertTrue(r[1].isFailure)
+        assertEquals("T:c", r[2].getOrNull())
+    }
+}

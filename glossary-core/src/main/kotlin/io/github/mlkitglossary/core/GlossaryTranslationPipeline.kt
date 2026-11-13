@@ -16,19 +16,44 @@ public enum class FallbackStrategy {
     PARTIAL_RESULT,
 }
 
+/**
+ * @param cacheSize number of translations to remember (0 disables). The cache is cleared
+ * whenever [glossary] is assigned.
+ */
 public class GlossaryTranslationPipeline(
     private val engine: TranslationEngine,
     glossary: Glossary = Glossary.EMPTY,
     private val protector: PlaceholderProtector = PlaceholderProtector(),
     private val fallback: FallbackStrategy = FallbackStrategy.PLAIN_TRANSLATION,
+    cacheSize: Int = 0,
 ) {
+    private val cache: MutableMap<String, String>? = if (cacheSize > 0) {
+        object : LinkedHashMap<String, String>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>) = size > cacheSize
+        }
+    } else {
+        null
+    }
+
     @Volatile
-    public var glossary: Glossary = glossary
+    private var current: Glossary = glossary
+
+    public var glossary: Glossary
+        get() = current
+        set(value) {
+            current = value
+            cache?.let { synchronized(it) { it.clear() } }
+        }
 
     public suspend fun translate(text: String): Result<String> {
         if (text.isBlank()) return Result.success(text)
+        cache?.let { c -> synchronized(c) { c[text] }?.let { return Result.success(it) } }
+        val snapshot = current
         return try {
-            Result.success(run(text))
+            val out = run(text, snapshot)
+            // A glossary swapped mid-flight must not poison the cache with stale output.
+            cache?.let { c -> synchronized(c) { if (snapshot === current) c[text] = out } }
+            Result.success(out)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -36,7 +61,10 @@ public class GlossaryTranslationPipeline(
         }
     }
 
-    private suspend fun run(text: String): String {
+    /** Translates each text independently; one failure does not affect the others. */
+    public suspend fun translateAll(texts: List<String>): List<Result<String>> = texts.map { translate(it) }
+
+    private suspend fun run(text: String, glossary: Glossary): String {
         val prepared = protector.protect(text, glossary)
         if (prepared.slots.isEmpty()) return engine.translate(text)
 

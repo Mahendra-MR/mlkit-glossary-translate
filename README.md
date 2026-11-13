@@ -62,7 +62,19 @@ translator.close()                                  // when done
 Options on `GlossaryTranslator`: `preservePatterns` (regexes copied through unchanged, default 4+ digit
 numbers), `fallback` (`PLAIN_TRANSLATION` default or `PARTIAL_RESULT`), `downloadConditions`.
 
-Not published to Maven Central yet; for now include the two modules from source.
+Not published yet; for now include the modules from source (`./gradlew :mlkit-glossary-translate:publishToMavenLocal` for local use).
+
+## Beyond a plain swap
+
+- **Any language pair.** Nothing in the core is Hindi-specific; pass any `TranslateLanguage` codes. The source language should be space-delimited (English, Spanish, ...) because term matching uses word boundaries.
+- **Gender agreement.** Mark entries with a gender and pass an agreement helper: `Glossary.build { term("EMI", "किस्त", Gender.FEMININE) }` with `agreement = HindiGenderAgreement()` turns `आपका GLS0Q` into `आपकी किस्त`. Implement `GenderAgreement` for other languages.
+- **JSON glossaries** (e.g. from remote config): `GlossaryJson.parse("""{"Loan":"लोन","EMI":{"to":"किस्त","gender":"feminine"}}""")`.
+- **Batch and cache:** `translateAll(list)` and `cacheSize = 50`.
+- **Sample app** in `sample/` compares plain vs glossary output side by side.
+
+## Status
+
+The pure-Kotlin logic is covered by JVM tests. The instrumented test and sample app exercise the real ML Kit model, but need a device with internet; results on real hardware are not published yet, so token survival for your language pair is worth verifying.
 
 ## Limitations
 
