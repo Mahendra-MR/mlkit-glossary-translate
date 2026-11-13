@@ -1,6 +1,17 @@
 # mlkit-glossary-translate
 
-A glossary ("keep these words as-is") layer for Google ML Kit on-device translation on Android.
+[![CI](https://github.com/Mahendra-MR/mlkit-glossary-translate/actions/workflows/ci.yml/badge.svg)](https://github.com/Mahendra-MR/mlkit-glossary-translate/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
+**Glossary, custom dictionary and "do not translate" support for Google ML Kit on-device translation on Android (Kotlin, coroutines).**
+
+Google ML Kit Translation (`com.google.mlkit:translate`) has no glossary, custom dictionary or do-not-translate option.
+This library wraps it so you can keep or replace specific words (brand names, `OTP`, `EMI`, `Loan`, product terms),
+protect numbers, URLs and HTML tags, and get natural everyday output instead of formal textbook translations,
+for example English to Hindi, Hinglish or any of the 59 languages ML Kit supports.
+
+Keywords: ML Kit translate glossary, ML Kit custom terminology, ML Kit do not translate, ML Kit keep word untranslated,
+Android offline translation glossary, ML Kit Hindi translation, Hinglish.
 
 ## The problem
 
